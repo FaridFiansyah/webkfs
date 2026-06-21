@@ -32,7 +32,7 @@ if (!existsSync(distDir)) {
 mkdirSync(outDir, { recursive: true });
 
 for (const file of readdirSync(distDir)) {
-  if (file.endsWith(".wasm")) {
+  if (file.startsWith("ort-wasm") && (file.endsWith(".wasm") || file.endsWith(".mjs"))) {
     copyFileSync(join(distDir, file), join(outDir, file));
   }
 }

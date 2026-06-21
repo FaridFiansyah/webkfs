@@ -12,16 +12,83 @@ import {
 import * as ort from "onnxruntime-web/wasm";
 import "./styles.css";
 
-const MODEL_URL = "/bestkfs19.onnx";
+const MODEL_URL = "/bestkfslast.onnx";
+const MODEL_NAME = "bestkfslast.onnx";
 const MODEL_SIZE = 640;
-const CLASS_NAMES = ["B", "BRO", "MRO", "R"];
-const CLASS_COLORS = ["#0f766e", "#2563eb", "#b45309", "#be123c"];
+const CLASS_NAMES = [
+  "FB1",
+  "FB10",
+  "FB12",
+  "FB13",
+  "FB2",
+  "FB3",
+  "FB4",
+  "FB5",
+  "FB6",
+  "FB7",
+  "FB8",
+  "FB9",
+  "FR1",
+  "FR10",
+  "FR11",
+  "FR12",
+  "FR13",
+  "FR14",
+  "FR15",
+  "FR2",
+  "FR3",
+  "FR4",
+  "FR5",
+  "FR6",
+  "FR7",
+  "FR8",
+  "FR9",
+  "Fb11",
+  "Fb14",
+  "Fb15",
+  "RB1",
+  "RB10",
+  "RB11",
+  "RB13",
+  "RB14",
+  "RB2",
+  "RB3",
+  "RB4",
+  "RB5",
+  "RB6",
+  "RB7",
+  "RB8",
+  "RB9",
+  "RR1",
+  "RR10",
+  "RR11",
+  "RR12",
+  "RR13",
+  "RR14",
+  "RR15",
+  "RR2",
+  "RR3",
+  "RR4",
+  "RR5",
+  "RR6",
+  "RR7",
+  "RR8",
+  "RR9",
+  "Rb12",
+  "Rb15"
+];
+const CLASS_COLORS = CLASS_NAMES.map((_, index) => `hsl(${(index * 47) % 360} 72% 38%)`);
 
 type Box = {
   x1: number;
   y1: number;
   x2: number;
   y2: number;
+  score: number;
+  classId: number;
+};
+
+type PredictionSummary = {
   score: number;
   classId: number;
 };
@@ -41,9 +108,16 @@ type LetterboxInfo = {
 
 let sessionPromise: Promise<ort.InferenceSession> | null = null;
 
+function getAssetUrl(path: string) {
+  return new URL(path, window.location.origin).href;
+}
+
 function getSession() {
   if (!sessionPromise) {
-    ort.env.wasm.wasmPaths = "/ort-wasm/";
+    ort.env.wasm.wasmPaths = {
+      mjs: getAssetUrl("/ort-wasm/ort-wasm-simd-threaded.mjs"),
+      wasm: getAssetUrl("/ort-wasm/ort-wasm-simd-threaded.wasm")
+    };
     ort.env.wasm.numThreads = 1;
     sessionPromise = ort.InferenceSession.create(MODEL_URL, {
       executionProviders: ["wasm"],
@@ -56,6 +130,20 @@ function getSession() {
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return String(error);
+}
+
+function getShortErrorMessage(error: unknown) {
+  const message = getErrorMessage(error).replace(/\s+/g, " ").trim();
+
+  return message.length > 96 ? `${message.slice(0, 96)}...` : message || "error tidak diketahui";
 }
 
 function preprocess(bitmap: ImageBitmap) {
@@ -149,6 +237,7 @@ function parseOutput(
   const [, channels, anchors] = output.dims;
   const classCount = channels - 4;
   const boxes: Box[] = [];
+  let bestPrediction: PredictionSummary | null = null;
 
   for (let i = 0; i < anchors; i += 1) {
     let classId = 0;
@@ -160,6 +249,10 @@ function parseOutput(
         score = classScore;
         classId = c;
       }
+    }
+
+    if (!bestPrediction || score > bestPrediction.score) {
+      bestPrediction = { score, classId };
     }
 
     if (score < confidenceThreshold) {
@@ -186,7 +279,10 @@ function parseOutput(
     });
   }
 
-  return nonMaxSuppression(boxes, iouThreshold);
+  return {
+    boxes: nonMaxSuppression(boxes, iouThreshold),
+    bestPrediction
+  };
 }
 
 function drawResult(canvas: HTMLCanvasElement, image: LoadedImage, boxes: Box[]) {
@@ -233,7 +329,7 @@ function App() {
   const [status, setStatus] = useState("Siap");
   const [isBusy, setIsBusy] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [confidence, setConfidence] = useState(0.45);
+  const [confidence, setConfidence] = useState(0.25);
   const [iou, setIou] = useState(0.5);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -251,7 +347,7 @@ function App() {
       .then(() => setStatus("Model siap"))
       .catch((error) => {
         console.error(error);
-        setStatus("Model gagal dimuat");
+        setStatus(`Model gagal: ${getShortErrorMessage(error)}`);
       });
   }, []);
 
@@ -303,7 +399,7 @@ function App() {
       const inputName = session.inputNames[0];
       const outputName = session.outputNames[0];
       const result = await session.run({ [inputName]: tensor });
-      const detectedBoxes = parseOutput(
+      const detection = parseOutput(
         result[outputName],
         letterbox,
         image.width,
@@ -311,13 +407,21 @@ function App() {
         confidence,
         iou
       );
+      const detectedBoxes = detection.boxes;
 
       drawResult(canvasRef.current, image, detectedBoxes);
       setBoxes(detectedBoxes);
-      setStatus(`${detectedBoxes.length} objek`);
+      if (detectedBoxes.length > 0) {
+        setStatus(`${detectedBoxes.length} objek`);
+      } else if (detection.bestPrediction) {
+        const bestName = CLASS_NAMES[detection.bestPrediction.classId] ?? `class_${detection.bestPrediction.classId}`;
+        setStatus(`0 objek, max ${bestName} ${(detection.bestPrediction.score * 100).toFixed(1)}%`);
+      } else {
+        setStatus("0 objek");
+      }
     } catch (error) {
       console.error(error);
-      setStatus("Deteksi gagal");
+      setStatus(`Gagal: ${getShortErrorMessage(error)}`);
     } finally {
       setIsBusy(false);
     }
@@ -377,7 +481,7 @@ function App() {
             </div>
             <div>
               <h1>ABU26 Detector</h1>
-              <p>bestkfs19.pt</p>
+              <p>{MODEL_NAME}</p>
             </div>
           </div>
 
@@ -404,9 +508,9 @@ function App() {
               <strong>{confidence.toFixed(2)}</strong>
               <input
                 type="range"
-                min="0.05"
+                min="0.01"
                 max="0.95"
-                step="0.05"
+                step="0.01"
                 value={confidence}
                 onChange={(event) => setConfidence(Number(event.target.value))}
               />

@@ -211,6 +211,7 @@ p {
   border: 1px solid var(--line);
   border-radius: 8px;
   display: flex;
+  gap: 12px;
   justify-content: space-between;
   min-height: 48px;
   padding: 10px 12px;
@@ -223,11 +224,16 @@ p {
 
 .status-box strong {
   font-size: 14px;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
 .class-list {
   display: grid;
   gap: 8px;
+  max-height: 280px;
+  overflow: auto;
+  padding-right: 4px;
 }
 
 .class-row {
