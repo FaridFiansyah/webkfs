@@ -1,0 +1,23 @@
+node_modules/
+dist/
+vite-dev.*.log
+onnx-sanity-output.jpg
+rack_env/
+ROI RISET/
+CONTROLLER26/
+cropped_dataset/
+cropped_datasetbaru/
+dataset_yolo/
+input_images/
+row2/
+variasi_f(asli)/
+variasi_jarak/
+__pycache__/
+*.pt
+*.pth
+*.onnx
+*.h5
+*.keras
+*.rar
+*.wav
+!public/bestkfs19.onnx
