@@ -21,3 +21,4 @@ __pycache__/
 *.rar
 *.wav
 !public/bestkfs19.onnx
+!public/bestkfslast.onnx
