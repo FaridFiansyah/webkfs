@@ -1,6 +1,6 @@
 # ABU26 Detector Web
 
-Web statis untuk upload gambar, menjalankan model ONNX `bestkfslast.onnx`, lalu menampilkan gambar dengan bounding box.
+Web statis untuk upload gambar, menjalankan model ONNX `bestforest25.onnx`, lalu menampilkan gambar dengan bounding box.
 
 Folder ini sudah siap dijadikan satu repository GitHub.
 
@@ -33,8 +33,8 @@ Vercel akan menjalankan `npm install` dan `npm run build`, lalu menyajikan folde
 
 ## Update Model
 
-Vercel tidak menjalankan PyTorch `.pt` secara langsung. Model perlu tersedia sebagai ONNX di folder `public/` agar inferensi bisa berjalan di browser. Model aktif saat ini adalah `public/bestkfslast.onnx`.
+Vercel tidak menjalankan PyTorch `.pt` secara langsung. Model perlu tersedia sebagai ONNX di folder `public/` agar inferensi bisa berjalan di browser. Model aktif saat ini adalah `public/bestforest25.onnx`, hasil ekspor dari `bestforest25.pt`.
 
 ```bash
-python scripts/export_bestkfs19.py
+python scripts/export_bestforest25.py
 ```

@@ -12,71 +12,10 @@ import {
 import * as ort from "onnxruntime-web/wasm";
 import "./styles.css";
 
-const MODEL_URL = "/bestkfslast.onnx";
-const MODEL_NAME = "bestkfslast.onnx";
+const MODEL_URL = "/bestforest25.onnx";
+const MODEL_NAME = "bestforest25.onnx";
 const MODEL_SIZE = 640;
-const CLASS_NAMES = [
-  "FB1",
-  "FB10",
-  "FB12",
-  "FB13",
-  "FB2",
-  "FB3",
-  "FB4",
-  "FB5",
-  "FB6",
-  "FB7",
-  "FB8",
-  "FB9",
-  "FR1",
-  "FR10",
-  "FR11",
-  "FR12",
-  "FR13",
-  "FR14",
-  "FR15",
-  "FR2",
-  "FR3",
-  "FR4",
-  "FR5",
-  "FR6",
-  "FR7",
-  "FR8",
-  "FR9",
-  "Fb11",
-  "Fb14",
-  "Fb15",
-  "RB1",
-  "RB10",
-  "RB11",
-  "RB13",
-  "RB14",
-  "RB2",
-  "RB3",
-  "RB4",
-  "RB5",
-  "RB6",
-  "RB7",
-  "RB8",
-  "RB9",
-  "RR1",
-  "RR10",
-  "RR11",
-  "RR12",
-  "RR13",
-  "RR14",
-  "RR15",
-  "RR2",
-  "RR3",
-  "RR4",
-  "RR5",
-  "RR6",
-  "RR7",
-  "RR8",
-  "RR9",
-  "Rb12",
-  "Rb15"
-];
+const CLASS_NAMES = ["B", "FB", "FR", "R"];
 const CLASS_COLORS = CLASS_NAMES.map((_, index) => `hsl(${(index * 47) % 360} 72% 38%)`);
 
 type Box = {

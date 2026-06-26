@@ -22,3 +22,4 @@ __pycache__/
 *.wav
 !public/bestkfs19.onnx
 !public/bestkfslast.onnx
+!public/bestforest25.onnx
